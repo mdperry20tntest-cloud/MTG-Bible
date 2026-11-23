@@ -4,7 +4,7 @@
 $Aud         = 1.4233     # fallback USD->AUD rate, only used if the live rate can't be fetched
 $UseLiveRate = $true      # $true = fetch today's USD->AUD rate each run; $false = always use the fixed rate above
 $OutputPath  = "D:\MTG\Scryfall_Price_Report.html"
-$CsvPath     = "D:\MTG\Id.csv"
+$CsvPath     = "D:\MTG\ManaBox_Collection.csv"
 $SnapshotPath = "D:\MTG\Price_Snapshot.json"   # remembers prices between runs for the Change column
 $HistoryPath  = "D:\MTG\Price_History.json"    # one total-collection-value entry per day, for the value-over-time chart
 $ReportTitle = "TCG Bible"
