@@ -4,18 +4,22 @@
 $Aud         = 1.4233     # fallback USD->AUD rate, only used if the live rate can't be fetched
 $UseLiveRate = $true      # $true = fetch today's USD->AUD rate each run; $false = always use the fixed rate above
 $OutputPath  = "D:\MTG\Scryfall_Price_Report.html"
-$CsvPath     = "D:\MTG\ManaBox_Collection.csv"
+$CsvPath     = "D:\MTG\Id.csv"
 $SnapshotPath = "D:\MTG\Price_Snapshot.json"   # remembers prices between runs for the Change column
 $HistoryPath  = "D:\MTG\Price_History.json"    # one total-collection-value entry per day, for the value-over-time chart
 $ReportTitle = "TCG Bible"
 
 # Total amount you have spent on the collection, in AUD. Shown as a "Total Spent" pill next to the Total pill:
 # green when the collection is worth MORE than you spent, red when it is worth LESS. Set to 0 to hide the pill.
-$TotalSpent  = 0
+$TotalSpent  = 4996.9
 
 # The script's own folder. Columns.ps1 and the Assets folder (report.html / report.css / report.js) live next to it.
 $ScriptDir  = if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }
 $AssetsPath = Join-Path $ScriptDir 'Assets'
+
+# Downloaded files carry a "blocked" flag (Mark of the Web) that stops Windows running them. Clear it on every
+# file next to this script (Columns.ps1, Assets, etc.) so they never need unblocking by hand.
+try { Get-ChildItem -Path $ScriptDir -Recurse -File -ErrorAction SilentlyContinue | Unblock-File -ErrorAction SilentlyContinue } catch { }
 
 # eBay Search column: the icon opens an eBay search for the card name plus this extra word
 # (keeps results to Magic cards). Set $EbaySearchSuffix to '' to search by the card name only.
