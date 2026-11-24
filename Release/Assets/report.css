@@ -1,0 +1,205 @@
+    :root {
+      --bg-deep: #14121c; --bg-mid: #231a38;
+      --gold: #9b7fd1; --gold-bright: #d9c8f5; --gold-dark: #5b4396;
+      --parchment: #e6dff2; --parchment-alt: #d9d0ea; --ink: #1d1530;
+      --bronze: #3d2d66; --bronze-light: #5a4396; --muted: #a89cc4;
+      /* extra shades used by the gradients, links and inputs */
+      --bg-glow: #3a2a5c; --panel-top: #231a38; --panel-bottom: #181226; --panel-edge: #0b0812;
+      --th-top: #33265a; --th-bottom: #22183d; --th-hover-top: #45337a; --th-hover-bottom: #302355;
+      --btn-hover-top: #7459b8; --btn-hover-bottom: #553f94;
+      --row-line: #bfb2d9; --row-hover: #f1ecfa; --link: #4a2f94; --link-hover: #6a3fd0;
+      --input-bg: #f3effa; --placeholder: #6b5f85; --text-soft: #cfc4e6;
+    }
+    * { box-sizing: border-box; }
+    html { background: var(--bg-deep); }
+    body { margin: 0; padding: 24px 16px 40px; min-height: 100vh; color: var(--parchment);
+           font-family: "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+           background: radial-gradient(ellipse at top, var(--bg-glow) 0%, var(--bg-mid) 40%, var(--bg-deep) 100%) fixed; }
+    .page { width: 75vw; max-width: 100%; margin: 0 auto; }
+
+    /* ---- TCG Bible banner (Ancient Tomb art) ---- */
+    .tcg-banner {
+      /* To use another printing, change the set/number, e.g. eos/91 (and update the artist in report.html). */
+      --art: url("https://api.scryfall.com/cards/eos/136?format=image&version=art_crop");
+      --ink: #14121c;
+      --gold: #c9a24a;
+
+      container-type: inline-size;
+      position: relative;
+      width: 100%;
+      aspect-ratio: 10 / 1;
+      min-height: 64px;
+      overflow: hidden;
+      background: var(--ink);
+      border-bottom: 4px solid var(--gold);
+      border-radius: 10px;
+      margin-bottom: 22px;
+      font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;
+    }
+    .tcg-banner__art {
+      position: absolute; top: 0; right: 0; bottom: 0; width: 66%;
+      /* change the 45% to show a different band of the art (0% = top, 100% = bottom) */
+      background: var(--art) center 45% / cover no-repeat;
+      -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.03) 8%, rgba(0,0,0,.10) 16%,
+        rgba(0,0,0,.20) 24%, rgba(0,0,0,.32) 32%, rgba(0,0,0,.45) 40%, rgba(0,0,0,.58) 48%,
+        rgba(0,0,0,.70) 56%, rgba(0,0,0,.80) 64%, rgba(0,0,0,.88) 72%, rgba(0,0,0,.94) 80%,
+        rgba(0,0,0,.98) 90%, #000 100%);
+              mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.03) 8%, rgba(0,0,0,.10) 16%,
+        rgba(0,0,0,.20) 24%, rgba(0,0,0,.32) 32%, rgba(0,0,0,.45) 40%, rgba(0,0,0,.58) 48%,
+        rgba(0,0,0,.70) 56%, rgba(0,0,0,.80) 64%, rgba(0,0,0,.88) 72%, rgba(0,0,0,.94) 80%,
+        rgba(0,0,0,.98) 90%, #000 100%);
+    }
+    .tcg-banner__art::before {      /* galaxy-foil shimmer: delete this block to remove */
+      content: ""; position: absolute; inset: 0; opacity: .5; mix-blend-mode: screen;
+      background:
+        linear-gradient(115deg, transparent 30%, rgba(110,170,255,.16) 45%, rgba(225,120,255,.16) 55%, transparent 70%),
+        radial-gradient(1px 1px at 20px 30px, #fff, transparent),
+        radial-gradient(1px 1px at 70px 95px, #bfe3ff, transparent),
+        radial-gradient(1.5px 1.5px at 130px 50px, #f0d0ff, transparent),
+        radial-gradient(1px 1px at 160px 125px, #fff, transparent);
+      background-size: 100% 100%, 180px 150px, 180px 150px, 180px 150px, 180px 150px;
+    }
+    .tcg-banner__text {
+      position: relative; z-index: 1; height: 100%; box-sizing: border-box;
+      display: flex; flex-direction: column; justify-content: center; padding: 0 5cqw;
+    }
+    .tcg-banner__title {
+      margin: 0; font-size: clamp(20px, 3.4cqw, 56px); font-weight: 700; line-height: 1.05;
+      color: #efe6d0; text-shadow: 0 2px 14px rgba(0,0,0,.6);
+    }
+    .tcg-banner__sub {
+      margin: .3em 0 0; font-size: clamp(11px, 1.1cqw, 18px); font-style: italic; color: #c4bcd3;
+    }
+    .tcg-banner__credit {
+      position: absolute; z-index: 1; right: 12px; bottom: 6px; max-width: 55%; text-align: right;
+      font: clamp(9px, .8cqw, 12px) / 1.3 Arial, sans-serif;
+      color: rgba(255,255,255,.7); text-shadow: 0 1px 3px #000;
+    }
+
+    /* ---- Card frame ---- */
+    .card-frame { padding: 10px; border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+                  background: linear-gradient(145deg, var(--gold-dark), var(--gold) 25%, var(--bronze-light) 50%, var(--gold) 75%, var(--gold-dark)); }
+    .frame-inner { padding: 18px; border-radius: 10px; border: 2px solid var(--panel-edge);
+                   background: linear-gradient(180deg, var(--panel-top), var(--panel-bottom)); box-shadow: inset 0 0 25px rgba(0,0,0,0.6); }
+
+    /* ---- Toolbar ---- */
+    .search-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+    .search-box { flex: 1 1 260px; max-width: 420px; padding: 10px 14px; border: 2px solid var(--gold-dark); border-radius: 6px;
+                  font: inherit; font-size: 11pt; background: var(--input-bg); color: var(--ink); outline: none; }
+    .search-box::placeholder { color: var(--placeholder); }
+    .search-box:focus { border-color: var(--gold-bright); box-shadow: 0 0 8px rgba(217,200,245,0.5); }
+    .clear-btn, .export-btn, .pagination-btn { padding: 9px 16px; border: 1px solid var(--gold-dark); border-radius: 6px; cursor: pointer;
+           font: inherit; font-size: 10.5pt; color: var(--gold-bright);
+           background: linear-gradient(180deg, var(--bronze-light), var(--bronze));
+           box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 2px 4px rgba(0,0,0,0.5); }
+    .clear-btn:hover, .export-btn:hover, .pagination-btn:hover { border-color: var(--gold-bright); background: linear-gradient(180deg, var(--btn-hover-top), var(--btn-hover-bottom)); }
+    .totals { display: flex; gap: 10px 16px; flex-wrap: wrap; margin-bottom: 14px; }
+    .totals:empty { display: none; }
+    .totals span { padding: 6px 16px; border: 1px solid var(--gold-dark); border-radius: 999px; background: rgba(0,0,0,0.35);
+                   color: var(--gold-bright); font-weight: bold; font-size: 12pt; letter-spacing: 0.5px; }
+
+    /* ---- Set completion pills (progress bar with the percentage inside) ---- */
+    .set-panel { margin-bottom: 14px; }
+    .set-panel summary { cursor: pointer; margin-bottom: 10px; color: var(--gold-bright); font-weight: bold; font-size: 12pt; letter-spacing: 0.5px; }
+    .set-progress { display: flex; flex-wrap: wrap; gap: 8px 12px; }
+    .set-pill { position: relative; width: 215px; height: 30px; border: 1px solid var(--gold-dark); border-radius: 999px; overflow: hidden;
+                background: rgba(0,0,0,0.35); cursor: pointer; }
+    .set-pill:hover { border-color: var(--gold-bright); }
+    .set-fill { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, var(--bronze-light), var(--gold)); }
+    .set-pill.complete { border-color: #2e9e4f; }
+    .set-pill.complete .set-fill { background: linear-gradient(90deg, #2e9e4f, #4cc274); }
+    .set-label { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; height: 100%; padding: 0 10px;
+                 font-size: 10.5pt; font-weight: bold; white-space: nowrap; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.85); }
+    .set-pill.no-total .set-label { color: var(--text-soft); text-shadow: none; }
+
+    /* ---- Owned / missing cards tick box ---- */
+    .view-toggle { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border: 1px solid var(--gold-dark); border-radius: 6px;
+                   cursor: pointer; user-select: none; font-size: 10.5pt; color: var(--gold-bright); background: rgba(0,0,0,0.35); }
+    .view-toggle:hover { border-color: var(--gold-bright); }
+    .view-toggle input { width: 16px; height: 16px; margin: 0; cursor: pointer; accent-color: var(--gold); }
+    .view-toggle.disabled { opacity: 0.5; cursor: not-allowed; }
+    .view-toggle.disabled input { cursor: not-allowed; }
+    .view-note { margin-bottom: 12px; color: var(--text-soft); font-size: 10.5pt; font-style: italic; }
+    /* A card you do not own has no quantity or price change, so those columns are hidden in the missing view */
+    .missing-view [data-key="Qty"], .missing-view [data-key="Change"] { display: none; }
+
+    /* ---- Table ---- */
+    .table-wrap { overflow-x: auto; border: 2px solid var(--gold-dark); border-radius: 8px; }
+    table { border-collapse: collapse; width: 100%; background: var(--parchment); color: var(--ink); }
+    th { position: relative; padding: 12px 28px 12px 12px; text-align: left; white-space: nowrap; cursor: pointer; user-select: none;
+         font-variant: small-caps; letter-spacing: 1px; font-size: 12pt; color: var(--gold-bright);
+         background: linear-gradient(180deg, var(--th-top), var(--th-bottom)); border-bottom: 2px solid var(--gold-dark); }
+    th:hover { background: linear-gradient(180deg, var(--th-hover-top), var(--th-hover-bottom)); }
+    th.asc::after  { content: '\25B2'; position: absolute; right: 10px; font-size: 0.75em; }
+    th.desc::after { content: '\25BC'; position: absolute; right: 10px; font-size: 0.75em; }
+    td { padding: 10px 12px; border-bottom: 1px solid var(--row-line); font-size: 11pt; }
+    tbody tr:nth-child(even) { background: var(--parchment-alt); }
+    tbody tr:hover { background: var(--row-hover); }
+    td a { color: var(--link); font-weight: bold; text-decoration: none; }
+    td a:hover { color: var(--link-hover); text-decoration: underline; }
+    td a.ebay-link { display: inline-block; line-height: 0; padding: 2px 4px; border-radius: 4px; background: #fff; }
+    td a.ebay-link:hover { text-decoration: none; box-shadow: 0 0 0 2px var(--gold); }
+
+    /* ---- Warnings: failed lookups banner, missing prices ---- */
+    .warning-banner { margin-bottom: 14px; padding: 10px 14px; border: 2px solid #c0392b; border-radius: 8px;
+                      background: rgba(192,57,43,0.18); color: #ffd9d6; font-size: 10.5pt; line-height: 1.5; }
+    .warning-banner div + div { margin-top: 6px; }
+    .no-price { color: #9a3b00; font-weight: bold; font-style: italic; }
+    .totals span.warn { border-color: #c0392b; color: #ffb4a9; }
+    .totals span.gain { border-color: #2e9e4f; color: #7ddc98; }
+    .totals span.loss { border-color: #c0392b; color: #ffb4a9; }
+
+    /* ---- Collection value history (collapsed by default; click the heading to show/hide) ---- */
+    .history-panel { margin-bottom: 14px; padding: 10px 14px 12px; border: 1px solid var(--gold-dark); border-radius: 8px; background: rgba(0,0,0,0.25); }
+    .history-panel summary { cursor: pointer; display: flex; gap: 6px 20px; flex-wrap: wrap; align-items: baseline;
+                             color: var(--gold-bright); font-weight: bold; font-size: 12pt; letter-spacing: 0.5px; }
+    .history-delta.gain { color: #7ddc98; }
+    .history-delta.loss { color: #ffb4a9; }
+    .history-note { margin-top: 8px; color: var(--text-soft); font-size: 10.5pt; font-style: italic; }
+    #historyChart svg { display: block; width: 100%; height: auto; margin-top: 8px; }
+    .h-grid  { stroke: rgba(217,200,245,0.15); stroke-width: 1; }
+    .h-label { fill: var(--muted); font-size: 11px; font-family: Georgia, serif; }
+    .h-line  { fill: none; stroke: var(--gold-bright); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+    .h-area  { fill: rgba(155,127,209,0.22); stroke: none; }
+    .h-dot   { fill: var(--gold-bright); stroke: #181226; stroke-width: 1.5; }
+
+    /* ---- Price change (+ green, - red) ---- */
+    .change { font-weight: bold; white-space: nowrap; }
+    .change-up   { color: #1b7a34; }
+    .change-down { color: #b3261e; }
+    .change-flat, .change-new { color: #6b5f85; font-weight: normal; }
+    .change-new  { font-style: italic; }
+
+    /* ---- High-value rows: bold gold border around the whole row ---- */
+    tbody tr.high-value td { border-top: 3px solid #e0a800; border-bottom: 3px solid #e0a800; }
+    tbody tr.high-value td:first-child { border-left: 3px solid #e0a800; }
+    tbody tr.high-value td:last-child { border-right: 3px solid #e0a800; }
+
+    /* ---- Rarity badges ---- */
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; border: 1px solid rgba(0,0,0,0.35);
+             font-size: 9.5pt; font-weight: bold; letter-spacing: 0.5px; text-transform: capitalize; }
+    .badge-common   { background: #3b3b3b; color: #f1f1f1; }
+    .badge-uncommon { background: #b9c5cd; color: #1d2328; }
+    .badge-rare     { background: #d8b540; color: #2b2118; }
+    .badge-mythic   { background: #c4451a; color: #ffffff; }
+    .badge-special, .badge-bonus { background: #6b3fa0; color: #ffffff; }
+
+    /* ---- Pagination ---- */
+    .footer-row { margin-top: 14px; display: flex; gap: 20px; align-items: center; flex-wrap: wrap; color: var(--text-soft); font-size: 10pt; }
+    .footer-row select { padding: 4px 8px; font: inherit; border: 1px solid var(--gold-dark); border-radius: 4px; background: var(--input-bg); color: var(--ink); }
+    .pagination-container { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+    .pagination-btn { padding: 6px 12px; font-size: 10pt; }
+    .pagination-btn.active { background: linear-gradient(180deg, var(--gold-bright), var(--gold)); color: var(--ink); border-color: var(--gold-bright); font-weight: bold; }
+    .pagination-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .ellipsis { padding: 0 4px; color: var(--muted); }
+
+    /* ---- Card image popup (hover over a name) ---- */
+    #cardPreview { display: none; position: fixed; z-index: 1000; width: 300px; height: 418px; pointer-events: none;
+                   border-radius: 16px; overflow: hidden; background: var(--panel-top);
+                   box-shadow: 0 8px 28px rgba(0,0,0,0.7), 0 0 0 2px var(--gold-dark); }
+    #cardPreview img { display: block; width: 100%; height: 100%; object-fit: contain; }
+    @media (hover: none) { #cardPreview { display: none !important; } }
+
+    .fine-print { margin-top: 18px; text-align: center; font-size: 9pt; font-style: italic; line-height: 1.5; color: var(--muted); }
+    @media (max-width: 900px) { .page { width: 100%; } }  /* use the full width on small screens */
+    @media (max-width: 600px) { .tcg-banner { aspect-ratio: 5 / 1; } .frame-inner { padding: 12px; } }

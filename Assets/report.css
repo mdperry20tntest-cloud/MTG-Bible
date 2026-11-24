@@ -1,14 +1,14 @@
     :root {
-      --bg-deep: #0a1220; --bg-mid: #14233a;
-      --gold: #5aa9d9; --gold-bright: #a9dcf5; --gold-dark: #2c6a94;
-      --parchment: #d6e5f2; --parchment-alt: #c5d9ec; --ink: #14202e;
-      --bronze: #1f3d5c; --bronze-light: #2f5a85; --muted: #8aa6bf;
+      --bg-deep: #14121c; --bg-mid: #231a38;
+      --gold: #9b7fd1; --gold-bright: #d9c8f5; --gold-dark: #5b4396;
+      --parchment: #e6dff2; --parchment-alt: #d9d0ea; --ink: #1d1530;
+      --bronze: #3d2d66; --bronze-light: #5a4396; --muted: #a89cc4;
       /* extra shades used by the gradients, links and inputs */
-      --bg-glow: #1f3a5c; --panel-top: #162840; --panel-bottom: #0f1d30; --panel-edge: #060c16;
-      --th-top: #1b3350; --th-bottom: #112238; --th-hover-top: #27476b; --th-hover-bottom: #1a3250;
-      --btn-hover-top: #3a6c9a; --btn-hover-bottom: #28507a;
-      --row-line: #a3bfd8; --row-hover: #e6f1fa; --link: #1a4f86; --link-hover: #0b5aa6;
-      --input-bg: #eef5fb; --placeholder: #5a6f84; --text-soft: #bcd2e4;
+      --bg-glow: #3a2a5c; --panel-top: #231a38; --panel-bottom: #181226; --panel-edge: #0b0812;
+      --th-top: #33265a; --th-bottom: #22183d; --th-hover-top: #45337a; --th-hover-bottom: #302355;
+      --btn-hover-top: #7459b8; --btn-hover-bottom: #553f94;
+      --row-line: #bfb2d9; --row-hover: #f1ecfa; --link: #4a2f94; --link-hover: #6a3fd0;
+      --input-bg: #f3effa; --placeholder: #6b5f85; --text-soft: #cfc4e6;
     }
     * { box-sizing: border-box; }
     html { background: var(--bg-deep); }
@@ -17,21 +17,64 @@
            background: radial-gradient(ellipse at top, var(--bg-glow) 0%, var(--bg-mid) 40%, var(--bg-deep) 100%) fixed; }
     .page { width: 75vw; max-width: 100%; margin: 0 auto; }
 
-    /* ---- Banner ---- */
-    .banner { text-align: center; margin-bottom: 22px; }
-    .banner h1 { margin: 12px 0 10px; font-family: "Trajan Pro", Cinzel, "Palatino Linotype", Georgia, serif;
-                 font-size: 26pt; letter-spacing: 2px; font-variant: small-caps; color: var(--gold-bright);
-                 text-shadow: 0 2px 0 #000, 0 0 18px rgba(90,169,217,0.35); }
-    .pips { display: flex; justify-content: center; gap: 10px; }
-    .pip { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--gold);
-           box-shadow: 0 0 6px rgba(0,0,0,0.6), inset 0 0 3px rgba(0,0,0,0.4); }
-    .pip-w { background: #f8f3d6; } .pip-u { background: #2b7bbf; } .pip-b { background: #2a1f2d; }
-    .pip-r { background: #cf3a2b; } .pip-g { background: #2f8a4c; }
-    .divider { position: relative; height: 14px; max-width: 420px; margin: 0 auto; }
-    .divider::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 2px; transform: translateY(-50%);
-                       background: linear-gradient(90deg, transparent, var(--gold), transparent); }
-    .divider span { position: absolute; left: 50%; top: 50%; width: 10px; height: 10px; background: var(--gold);
-                    transform: translate(-50%, -50%) rotate(45deg); box-shadow: 0 0 0 3px var(--bg-mid); }
+    /* ---- TCG Bible banner (Ancient Tomb art) ---- */
+    .tcg-banner {
+      /* To use another printing, change the set/number, e.g. eos/91 (and update the artist in report.html). */
+      --art: url("https://api.scryfall.com/cards/eos/136?format=image&version=art_crop");
+      --ink: #14121c;
+      --gold: #c9a24a;
+
+      container-type: inline-size;
+      position: relative;
+      width: 100%;
+      aspect-ratio: 10 / 1;
+      min-height: 64px;
+      overflow: hidden;
+      background: var(--ink);
+      border-bottom: 4px solid var(--gold);
+      border-radius: 10px;
+      margin-bottom: 22px;
+      font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;
+    }
+    .tcg-banner__art {
+      position: absolute; top: 0; right: 0; bottom: 0; width: 66%;
+      /* change the 45% to show a different band of the art (0% = top, 100% = bottom) */
+      background: var(--art) center 45% / cover no-repeat;
+      -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.03) 8%, rgba(0,0,0,.10) 16%,
+        rgba(0,0,0,.20) 24%, rgba(0,0,0,.32) 32%, rgba(0,0,0,.45) 40%, rgba(0,0,0,.58) 48%,
+        rgba(0,0,0,.70) 56%, rgba(0,0,0,.80) 64%, rgba(0,0,0,.88) 72%, rgba(0,0,0,.94) 80%,
+        rgba(0,0,0,.98) 90%, #000 100%);
+              mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.03) 8%, rgba(0,0,0,.10) 16%,
+        rgba(0,0,0,.20) 24%, rgba(0,0,0,.32) 32%, rgba(0,0,0,.45) 40%, rgba(0,0,0,.58) 48%,
+        rgba(0,0,0,.70) 56%, rgba(0,0,0,.80) 64%, rgba(0,0,0,.88) 72%, rgba(0,0,0,.94) 80%,
+        rgba(0,0,0,.98) 90%, #000 100%);
+    }
+    .tcg-banner__art::before {      /* galaxy-foil shimmer: delete this block to remove */
+      content: ""; position: absolute; inset: 0; opacity: .5; mix-blend-mode: screen;
+      background:
+        linear-gradient(115deg, transparent 30%, rgba(110,170,255,.16) 45%, rgba(225,120,255,.16) 55%, transparent 70%),
+        radial-gradient(1px 1px at 20px 30px, #fff, transparent),
+        radial-gradient(1px 1px at 70px 95px, #bfe3ff, transparent),
+        radial-gradient(1.5px 1.5px at 130px 50px, #f0d0ff, transparent),
+        radial-gradient(1px 1px at 160px 125px, #fff, transparent);
+      background-size: 100% 100%, 180px 150px, 180px 150px, 180px 150px, 180px 150px;
+    }
+    .tcg-banner__text {
+      position: relative; z-index: 1; height: 100%; box-sizing: border-box;
+      display: flex; flex-direction: column; justify-content: center; padding: 0 5cqw;
+    }
+    .tcg-banner__title {
+      margin: 0; font-size: clamp(20px, 3.4cqw, 56px); font-weight: 700; line-height: 1.05;
+      color: #efe6d0; text-shadow: 0 2px 14px rgba(0,0,0,.6);
+    }
+    .tcg-banner__sub {
+      margin: .3em 0 0; font-size: clamp(11px, 1.1cqw, 18px); font-style: italic; color: #c4bcd3;
+    }
+    .tcg-banner__credit {
+      position: absolute; z-index: 1; right: 12px; bottom: 6px; max-width: 55%; text-align: right;
+      font: clamp(9px, .8cqw, 12px) / 1.3 Arial, sans-serif;
+      color: rgba(255,255,255,.7); text-shadow: 0 1px 3px #000;
+    }
 
     /* ---- Card frame ---- */
     .card-frame { padding: 10px; border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.6);
@@ -44,7 +87,7 @@
     .search-box { flex: 1 1 260px; max-width: 420px; padding: 10px 14px; border: 2px solid var(--gold-dark); border-radius: 6px;
                   font: inherit; font-size: 11pt; background: var(--input-bg); color: var(--ink); outline: none; }
     .search-box::placeholder { color: var(--placeholder); }
-    .search-box:focus { border-color: var(--gold-bright); box-shadow: 0 0 8px rgba(169,220,245,0.5); }
+    .search-box:focus { border-color: var(--gold-bright); box-shadow: 0 0 8px rgba(217,200,245,0.5); }
     .clear-btn, .export-btn, .pagination-btn { padding: 9px 16px; border: 1px solid var(--gold-dark); border-radius: 6px; cursor: pointer;
            font: inherit; font-size: 10.5pt; color: var(--gold-bright);
            background: linear-gradient(180deg, var(--bronze-light), var(--bronze));
@@ -54,6 +97,31 @@
     .totals:empty { display: none; }
     .totals span { padding: 6px 16px; border: 1px solid var(--gold-dark); border-radius: 999px; background: rgba(0,0,0,0.35);
                    color: var(--gold-bright); font-weight: bold; font-size: 12pt; letter-spacing: 0.5px; }
+
+    /* ---- Set completion pills (progress bar with the percentage inside) ---- */
+    .set-panel { margin-bottom: 14px; }
+    .set-panel summary { cursor: pointer; margin-bottom: 10px; color: var(--gold-bright); font-weight: bold; font-size: 12pt; letter-spacing: 0.5px; }
+    .set-progress { display: flex; flex-wrap: wrap; gap: 8px 12px; }
+    .set-pill { position: relative; width: 215px; height: 30px; border: 1px solid var(--gold-dark); border-radius: 999px; overflow: hidden;
+                background: rgba(0,0,0,0.35); cursor: pointer; }
+    .set-pill:hover { border-color: var(--gold-bright); }
+    .set-fill { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, var(--bronze-light), var(--gold)); }
+    .set-pill.complete { border-color: #2e9e4f; }
+    .set-pill.complete .set-fill { background: linear-gradient(90deg, #2e9e4f, #4cc274); }
+    .set-label { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; height: 100%; padding: 0 10px;
+                 font-size: 10.5pt; font-weight: bold; white-space: nowrap; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.85); }
+    .set-pill.no-total .set-label { color: var(--text-soft); text-shadow: none; }
+
+    /* ---- Owned / missing cards tick box ---- */
+    .view-toggle { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border: 1px solid var(--gold-dark); border-radius: 6px;
+                   cursor: pointer; user-select: none; font-size: 10.5pt; color: var(--gold-bright); background: rgba(0,0,0,0.35); }
+    .view-toggle:hover { border-color: var(--gold-bright); }
+    .view-toggle input { width: 16px; height: 16px; margin: 0; cursor: pointer; accent-color: var(--gold); }
+    .view-toggle.disabled { opacity: 0.5; cursor: not-allowed; }
+    .view-toggle.disabled input { cursor: not-allowed; }
+    .view-note { margin-bottom: 12px; color: var(--text-soft); font-size: 10.5pt; font-style: italic; }
+    /* A card you do not own has no quantity or price change, so those columns are hidden in the missing view */
+    .missing-view [data-key="Qty"], .missing-view [data-key="Change"] { display: none; }
 
     /* ---- Table ---- */
     .table-wrap { overflow-x: auto; border: 2px solid var(--gold-dark); border-radius: 8px; }
@@ -87,24 +155,19 @@
                              color: var(--gold-bright); font-weight: bold; font-size: 12pt; letter-spacing: 0.5px; }
     .history-delta.gain { color: #7ddc98; }
     .history-delta.loss { color: #ffb4a9; }
-    .history-ranges { display: flex; gap: 6px; margin-top: 10px; }
-    .range-btn { padding: 4px 14px; border: 1px solid var(--gold-dark); border-radius: 999px; cursor: pointer; font: inherit; font-size: 10pt;
-                 color: var(--gold-bright); background: linear-gradient(180deg, var(--bronze-light), var(--bronze)); }
-    .range-btn:hover { border-color: var(--gold-bright); }
-    .range-btn.active { background: linear-gradient(180deg, var(--gold-bright), var(--gold)); color: var(--ink); border-color: var(--gold-bright); font-weight: bold; }
     .history-note { margin-top: 8px; color: var(--text-soft); font-size: 10.5pt; font-style: italic; }
     #historyChart svg { display: block; width: 100%; height: auto; margin-top: 8px; }
-    .h-grid  { stroke: rgba(169,220,245,0.15); stroke-width: 1; }
+    .h-grid  { stroke: rgba(217,200,245,0.15); stroke-width: 1; }
     .h-label { fill: var(--muted); font-size: 11px; font-family: Georgia, serif; }
     .h-line  { fill: none; stroke: var(--gold-bright); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
-    .h-area  { fill: rgba(90,169,217,0.18); stroke: none; }
-    .h-dot   { fill: var(--gold-bright); stroke: #0f1d30; stroke-width: 1.5; }
+    .h-area  { fill: rgba(155,127,209,0.22); stroke: none; }
+    .h-dot   { fill: var(--gold-bright); stroke: #181226; stroke-width: 1.5; }
 
     /* ---- Price change (+ green, - red) ---- */
     .change { font-weight: bold; white-space: nowrap; }
     .change-up   { color: #1b7a34; }
     .change-down { color: #b3261e; }
-    .change-flat, .change-new { color: #5a6f84; font-weight: normal; }
+    .change-flat, .change-new { color: #6b5f85; font-weight: normal; }
     .change-new  { font-style: italic; }
 
     /* ---- High-value rows: bold gold border around the whole row ---- */
@@ -139,4 +202,4 @@
 
     .fine-print { margin-top: 18px; text-align: center; font-size: 9pt; font-style: italic; line-height: 1.5; color: var(--muted); }
     @media (max-width: 900px) { .page { width: 100%; } }  /* use the full width on small screens */
-    @media (max-width: 600px) { .banner h1 { font-size: 18pt; } .frame-inner { padding: 12px; } }
+    @media (max-width: 600px) { .tcg-banner { aspect-ratio: 5 / 1; } .frame-inner { padding: 12px; } }

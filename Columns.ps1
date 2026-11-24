@@ -5,8 +5,7 @@
 # Header     : text shown in the table header
 # Value      : scriptblock receiving ($card = Scryfall response, $id = the card's Scryfall ID,
 #              $finish = 'normal', 'foil' or 'etched' from the CSV's Foil column,
-#              $qty = number of copies from the CSV's Quantity column, 1 if blank,
-#              $added = date from the CSV's Added column as yyyy-MM-dd, blank if missing)
+#              $qty = number of copies from the CSV's Quantity column, 1 if blank)
 # Type       : 'text' (default), 'number' (sorts numerically), 'html' (value is raw HTML)
 # Prefix     : optional text shown before the value in the table (e.g. '$')
 # Searchable : $true to include the column in the search box
@@ -37,7 +36,7 @@ $Columns = @(
     # Compared in USD so exchange-rate changes do not show up as price changes.
     @{ Key = 'Change'; Header = 'Change'; Type = 'number'; Delta = $true; DeltaTotal = $true
        Value = { param($card, $id, $finish, $qty)
-           if ($PrevPrices.Count -eq 0) { return '' }
+           if ($MissingMode -or $PrevPrices.Count -eq 0) { return '' }     # no change figure for cards you do not own
            if (-not (Test-HasPrice $card $finish)) { return '' }
            $key = "$(([string]$id).ToLower())|$finish"
            if (-not $PrevPrices.ContainsKey($key)) { return 'New' }
@@ -76,9 +75,8 @@ $Columns = @(
                $w.Substring(0, 1).ToUpper() + $w.Substring(1) })
            $t -join ', ' } }
 
-    # Date the card was added, from the CSV's Added column (yyyy-MM-dd)
-    @{ Key = 'Added';  Header = 'Date Added';
-       Value = { param($card, $id, $finish, $qty, $added) $added } }
+    @{ Key = 'ID';     Header = 'ID';    
+    Value = { param($card, $id) $id } }
 
     # Clickable eBay icon that opens an eBay search for the card name (front face only for double-faced
     # cards, since eBay copes badly with the "A // B" form). Opens in a new tab.

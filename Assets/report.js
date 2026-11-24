@@ -6,6 +6,15 @@ var searchTimer = null;
 var rows = [];          // pre-computed row records (built once)
 var visibleRows = [];   // rows after search + sort (recomputed only when those change)
 var collator = new Intl.Collator();
+var ownedRows = [];     // row records for the cards you own
+var missingRows = [];   // row records for the cards you are missing
+var showMissing = false;
+
+// The raw data behind the current view (used by the Excel export)
+function activeData() {
+  var d = showMissing ? (typeof missingData !== 'undefined' ? missingData : []) : cardData;
+  return Array.isArray(d) ? d : (d ? [d] : []);
+}
 
 function findColumn(key) {
   return columns.filter(function(c) { return c.key === key; })[0];
@@ -45,9 +54,10 @@ function cellHtml(col, item) {
 
 // Plain text, numbers and the search string are computed ONCE here, so
 // searching and sorting thousands of cards stays instant.
-function buildRows() {
+function makeRows(data) {
   var searchCols = columns.filter(function(c) { return c.searchable; });
-  rows = cardData.filter(Boolean).map(function(item) {
+  if (data && !Array.isArray(data)) data = [data];
+  return (data || []).filter(Boolean).map(function(item) {
     var r = { item: item, plain: {}, num: {}, search: '', noPrice: false };
     columns.forEach(function(col) {
       var p = plainValue(col, item);
@@ -112,29 +122,8 @@ function renderTotals() {
     box.appendChild(span);
   }
 
-  // Total Spent pill (global variable totalSpent, set in the script): green if the collection is worth more, red if less
-  function addSpentPill(col) {
-    if (!(typeof totalSpent === 'number' && totalSpent > 0)) return;
-    var value = 0;
-    rows.forEach(function(r) { value += r.num[col.key] || 0; });
-    value = Math.round(value * 100) / 100;
-    var span = document.createElement('span');
-    span.className = value > totalSpent ? 'gain' : (value < totalSpent ? 'loss' : '');
-    span.textContent = 'Total Spent: $' + totalSpent.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    box.appendChild(span);
-
-    // Profit/Loss pill: Collection value minus Total Spent (green with +, red with -)
-    var pl = Math.round((value - totalSpent) * 100) / 100;
-    var plSpan = document.createElement('span');
-    plSpan.className = pl > 0 ? 'gain' : (pl < 0 ? 'loss' : '');
-    plSpan.textContent = 'Profit/Loss: ' + (pl > 0 ? '+' : (pl < 0 ? '-' : '')) + '$' +
-      Math.abs(pl).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    box.appendChild(plSpan);
-  }
-
   columns.filter(function(c) { return c.total; }).forEach(function(col) {
-    addPill('Total', col, rows);
-    addSpentPill(col);
+    addPill(showMissing ? 'Missing' : 'Total', col, rows);
     if (filtered) addPill('Showing', col, visibleRows);
   });
 
@@ -142,6 +131,14 @@ function renderTotals() {
     addChangePill('Total', col, rows);
     if (filtered) addChangePill('Showing', col, visibleRows);
   });
+
+  var missing = rows.filter(function(r) { return r.noPrice; }).length;
+  if (missing > 0) {
+    var warn = document.createElement('span');
+    warn.className = 'warn';
+    warn.textContent = 'No price: ' + missing.toLocaleString() + (missing === 1 ? ' card' : ' cards') + ' (counted as $0.00)';
+    box.appendChild(warn);
+  }
 }
 
 function messageRow(text, color) {
@@ -188,7 +185,7 @@ function renderTable() {
   var pageRows = visibleRows.slice(start, start + rowsPerPage);
   tbody.innerHTML = pageRows.map(function(r) {
     var high = highValueKey && (r.num[highValueKey] || 0) > highValueMin;
-    return '<tr' + (high ? ' class="high-value"' : '') + '>' + columns.map(function(col) { return '<td>' + cellHtml(col, r.item) + '</td>'; }).join('') + '</tr>';
+    return '<tr' + (high ? ' class="high-value"' : '') + '>' + columns.map(function(col) { return '<td data-key="' + col.key + '">' + cellHtml(col, r.item) + '</td>'; }).join('') + '</tr>';
   }).join('');
 
   info.textContent = 'Showing ' + (start + 1).toLocaleString() + '-' + (start + pageRows.length).toLocaleString() +
@@ -196,6 +193,42 @@ function renderTable() {
     (visibleRows.length !== rows.length ? ' (filtered from ' + rows.length.toLocaleString() + ')' : '');
 
   renderControls(totalPages);
+}
+
+// ---------- Owned / missing cards tick box ----------
+function initViewToggle() {
+  var box = document.getElementById('missingToggle');
+  var wrap = document.getElementById('viewToggle');
+  var count = document.getElementById('missingCount');
+  var status = (typeof missingStatus !== 'undefined') ? missingStatus : 'Missing card data was not included in this report.';
+  if (status) {
+    box.disabled = true;
+    wrap.className = 'view-toggle disabled';
+    wrap.title = status;
+    count.textContent = '';
+  } else {
+    count.textContent = '(' + missingRows.length.toLocaleString() + ')';
+    wrap.title = 'Swap the table between the cards you own and the cards you are missing from your sets';
+  }
+}
+
+function onViewChange() {
+  showMissing = document.getElementById('missingToggle').checked;
+  rows = showMissing ? missingRows : ownedRows;
+  document.getElementById('reportTable').className = showMissing ? 'missing-view' : '';
+  var note = document.getElementById('viewNote');
+  if (showMissing) {
+    var skipped = (typeof missingSkipped !== 'undefined' && missingSkipped.length) ? missingSkipped : [];
+    note.textContent = 'Showing cards you do not own from the sets you own at least one card of. Price is for one copy, so the total is the cost of one of each.' +
+      (skipped.length ? ' Not listed (too large or could not be downloaded): ' + skipped.join(', ') + '.' : '');
+    note.style.display = '';
+  } else {
+    note.style.display = 'none';
+  }
+  currentPage = 1;
+  refreshRows();
+  renderTotals();
+  renderTable();
 }
 
 function applySearch() {
@@ -277,6 +310,66 @@ function renderControls(totalPages) {
   addButton('Next', currentPage + 1, currentPage === totalPages, false);
 }
 
+// ---------- Set completion pills ----------
+// One pill per set in the collection: unique cards owned (by set#number, so extra copies and foil/normal
+// duplicates count once) out of the set's total from Scryfall, drawn as a progress bar with the percentage inside.
+// Always based on the whole collection (not the search box). Clicking a pill searches for that set.
+function renderSetProgress() {
+  var box = document.getElementById('setProgress');
+  var panel = document.getElementById('setPanel');
+  var info = (typeof setInfo !== 'undefined' && setInfo) ? setInfo : {};
+  var owned = {};
+  ownedRows.forEach(function(r) {
+    var cn = r.plain['collector_number'] || '';
+    var code = cn.split('#')[0].toLowerCase();
+    if (!code) return;
+    if (!owned[code]) owned[code] = {};
+    owned[code][cn.toLowerCase()] = true;
+  });
+
+  var list = Object.keys(owned).map(function(code) {
+    var have = Object.keys(owned[code]).length;
+    var meta = info[code] || null;
+    var total = (meta && meta.total > 0) ? meta.total : 0;
+    var exact = total ? Math.min(have / total * 100, 100) : -1;
+    return { code: code, name: meta ? meta.name : code.toUpperCase(), have: have, total: total, exact: exact };
+  });
+  list.sort(function(a, b) { return (b.exact - a.exact) || (b.have - a.have) || collator.compare(a.code, b.code); });
+
+  box.innerHTML = '';
+  if (list.length === 0) { panel.style.display = 'none'; return; }
+  panel.style.display = '';
+  document.getElementById('setSummary').textContent = 'Set completion (' + list.length + (list.length === 1 ? ' set)' : ' sets)');
+
+  list.forEach(function(s) {
+    var CODE = s.code.toUpperCase();
+    var pill = document.createElement('div');
+    var label = document.createElement('span');
+    label.className = 'set-label';
+    if (s.total) {
+      var pct = Math.round(s.exact);
+      var pctText = (pct === 0 && s.have > 0) ? '<1%' : pct + '%';
+      var fill = document.createElement('div');
+      fill.className = 'set-fill';
+      fill.style.width = (s.have > 0 ? Math.max(s.exact, 1.5) : 0) + '%';
+      pill.className = 'set-pill' + (s.have >= s.total ? ' complete' : '');
+      pill.appendChild(fill);
+      label.textContent = CODE + ' \u00B7 ' + s.have + '/' + s.total + ' \u00B7 ' + pctText;
+      pill.title = s.name + ' (' + CODE + '): ' + s.have + ' of ' + s.total + ' cards. Click to search this set.';
+    } else {
+      pill.className = 'set-pill no-total';
+      label.textContent = CODE + ' \u00B7 ' + s.have + ' cards';
+      pill.title = s.name + ' (' + CODE + '): ' + s.have + ' cards (set size not available). Click to search this set.';
+    }
+    pill.appendChild(label);
+    pill.onclick = function() {
+      document.getElementById('searchInput').value = s.code + '#';
+      applySearch();
+    };
+    box.appendChild(pill);
+  });
+}
+
 // ---------- Collection value history: line chart + "since last week" figure ----------
 // valueHistory holds one {date, usd} entry per day; values are shown in AUD at today's rate,
 // so exchange-rate moves do not appear as changes in the value of the collection.
@@ -295,12 +388,6 @@ function fmtMoney(n) {
 
 function signOf(n) { return n > 0 ? '+' : (n < 0 ? '-' : ''); }
 
-var historyRange = 'all';   // number of months to show, or 'all'
-function setHistoryRange(r) {
-  historyRange = r;
-  renderHistory();
-}
-
 function renderHistoryInner() {
   var chart = document.getElementById('historyChart');
   var deltaBox = document.getElementById('historyDelta');
@@ -312,20 +399,6 @@ function renderHistoryInner() {
     .map(function(e) { return { d: parseStamp(e.date), v: parseFloat(e.usd) * audRate }; })
     .sort(function(a, b) { return a.d - b.d; });
 
-  // Highlight the active range button
-  var btns = document.querySelectorAll('#historyRanges button');
-  for (var b = 0; b < btns.length; b++) {
-    btns[b].className = 'range-btn' + (btns[b].getAttribute('data-range') === String(historyRange) ? ' active' : '');
-  }
-
-  // Keep only the points inside the chosen range (counted back from the latest day)
-  var allPts = pts, cutoff = null;
-  if (historyRange !== 'all' && pts.length > 0) {
-    cutoff = new Date(pts[pts.length - 1].d);
-    cutoff.setMonth(cutoff.getMonth() - historyRange);
-    pts = pts.filter(function(p) { return p.d >= cutoff; });
-  }
-
   if (pts.length === 0) {
     deltaBox.textContent = '';
     chart.innerHTML = '<div class="history-note">No value history saved yet. It is recorded each day the script runs with every card loading successfully.</div>';
@@ -334,16 +407,18 @@ function renderHistoryInner() {
 
   if (pts.length < 2) {
     deltaBox.textContent = '';
-    chart.innerHTML = '<div class="history-note">Today\'s value (' + fmtMoney(pts[0].v) + ') is saved. The chart appears once the script has run on a second day, or pick a longer range.</div>';
+    chart.innerHTML = '<div class="history-note">Today\'s value (' + fmtMoney(pts[0].v) + ') is saved. The chart appears once the script has run on a second day.</div>';
     return;
   }
 
-  // Change over the selected range (or since the first saved day if history is shorter than the range)
+  // Change since a week ago (or since the first saved day if there is less than a week of history)
   var last = pts[pts.length - 1];
-  var base = pts[0];
-  var label;
-  if (historyRange === 'all' || allPts[0].d > cutoff) label = 'Since ' + fmtDate(base.d);
-  else label = historyRange === 1 ? 'Last month' : (historyRange === 12 ? 'Last year' : 'Last ' + historyRange + ' months');
+  var target = new Date(last.d);
+  target.setDate(target.getDate() - 7);
+  var base = null;
+  for (var i = 0; i < pts.length - 1; i++) { if (pts[i].d <= target) base = pts[i]; }
+  var label = 'Since last week';
+  if (!base) { base = pts[0]; label = 'Since ' + fmtDate(base.d); }
   var diff = Math.round((last.v - base.v) * 100) / 100;
   var pct = base.v > 0 ? (diff / base.v * 100) : 0;
   deltaBox.className = 'history-delta ' + (diff > 0 ? 'gain' : (diff < 0 ? 'loss' : ''));
@@ -473,7 +548,8 @@ function buildXlsxBlob() {
   var headerCells = columns.map(function(col, c) { return textCell(colLetter(c) + '1', col.header, 1); });
   rows.push('<row r="1">' + headerCells.join('') + '</row>');
 
-  cardData.forEach(function(item, r) {
+  var data = activeData();
+  data.forEach(function(item, r) {
     var rowNum = r + 2;
     var cells = columns.map(function(col, c) {
       var ref = colLetter(c) + rowNum;
@@ -495,7 +571,7 @@ function buildXlsxBlob() {
   var cols = widths.map(function(w, i) {
     return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + (w + 3) + '" customWidth="1"/>';
   }).join('');
-  var lastRef = colLetter(columns.length - 1) + (cardData.length + 1);
+  var lastRef = colLetter(columns.length - 1) + (data.length + 1);
 
   var sheet = header + '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
     '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>' +
@@ -534,12 +610,12 @@ function buildXlsxBlob() {
 }
 
 function exportToExcel() {
-  if (!Array.isArray(cardData) || cardData.length === 0) return;
+  if (activeData().length === 0) return;
   var blob = buildXlsxBlob();
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
   a.href = url;
-  a.download = 'Scryfall_Price_Report.xlsx';
+  a.download = showMissing ? 'Scryfall_Missing_Cards.xlsx' : 'Scryfall_Price_Report.xlsx';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -593,9 +669,13 @@ function initPreview() {
 buildHeader();
 var sortTh = document.querySelector('#headerRow th[data-key="' + currentSortKey + '"]');
 if (sortTh) sortTh.className = currentSortDir;
-buildRows();
+ownedRows = makeRows(cardData);
+missingRows = makeRows(typeof missingData !== 'undefined' ? missingData : []);
+rows = ownedRows;
+initViewToggle();
 refreshRows();
 renderTotals();
+renderSetProgress();
 renderHistory();
 renderTable();
 initPreview();

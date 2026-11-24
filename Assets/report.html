@@ -9,10 +9,14 @@
 </head>
 <body>
 <div class='page'>
-  <header class='banner'>
-    <div class='pips'><span class='pip pip-w'></span><span class='pip pip-u'></span><span class='pip pip-b'></span><span class='pip pip-r'></span><span class='pip pip-g'></span></div>
-    <h1>{{TITLE}}</h1>
-    <div class='divider'><span></span></div>
+  <header class="tcg-banner">
+    <div class="tcg-banner__art" role="img" aria-label="Ancient Tomb card art"></div>
+    <div class="tcg-banner__text">
+      <p class="tcg-banner__title">{{TITLE}}</p>
+      <p class="tcg-banner__sub">My Magic: The Gathering collection</p>
+    </div>
+    <!-- Update the artist if you switch printings (eos/136 is Meel Tamphanon, eos/91 is Bruce Brenneise) -->
+    <span class="tcg-banner__credit">Art: Meel Tamphanon · Magic: The Gathering © Wizards of the Coast · Image via Scryfall</span>
   </header>
   <main class='card-frame'><div class='frame-inner'>
     {{WARNINGS}}
@@ -21,9 +25,12 @@
       <button type='button' class='clear-btn' onclick='clearSearch()'>Clear</button>
       <button type='button' class='export-btn' onclick='exportToExcel()'>Export to Excel</button>
       <button type='button' class='export-btn' onclick='refreshData()'>Refresh data</button>
+      <label id='viewToggle' class='view-toggle'><input type='checkbox' id='missingToggle' onchange='onViewChange()'> Show missing cards <span id='missingCount'></span></label>
     </div>
+    <div id='viewNote' class='view-note' style='display:none'></div>
     <div id='totals' class='totals'></div>
-    <details id='historyPanel' class='history-panel'><summary><span>Collection value over time</span><span id='historyDelta' class='history-delta'></span></summary><div id='historyRanges' class='history-ranges'><button type='button' class='range-btn' data-range='1' onclick='setHistoryRange(1)'>1M</button><button type='button' class='range-btn' data-range='3' onclick='setHistoryRange(3)'>3M</button><button type='button' class='range-btn' data-range='6' onclick='setHistoryRange(6)'>6M</button><button type='button' class='range-btn' data-range='12' onclick='setHistoryRange(12)'>1Y</button><button type='button' class='range-btn active' data-range='all' onclick="setHistoryRange('all')">All</button></div><div id='historyChart'></div></details>
+    <details id='setPanel' class='set-panel' open style='display:none'><summary id='setSummary'>Set completion</summary><div id='setProgress' class='set-progress'></div></details>
+    <details id='historyPanel' class='history-panel'><summary><span>Collection value over time</span><span id='historyDelta' class='history-delta'></span></summary><div id='historyChart'></div></details>
     <div class='table-wrap'><table id='reportTable'>
       <thead><tr id='headerRow'></tr></thead>
       <tbody id='tableBody'></tbody>

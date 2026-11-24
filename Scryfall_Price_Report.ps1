@@ -1,26 +1,17 @@
 # ==============================================================================
 # CONFIGURATION & VARIABLES
 # ==============================================================================
-$RooDir = "C:\Users\User\OneDrive\Documents\GitHub\MTG-Bible"
 $Aud         = 1.4233     # fallback USD->AUD rate, only used if the live rate can't be fetched
 $UseLiveRate = $true      # $true = fetch today's USD->AUD rate each run; $false = always use the fixed rate above
-$OutputPath  = "$RooDir/Scryfall_Price_Report.html"
-$CsvPath     = "$RooDir/ManaBox_Collection.csv"   # your exported collection CSV from TCGPlayer, MTGGoldfish, etc.
-$SnapshotPath = "$RooDir/Price_Snapshot.json"   # remembers prices between runs for the Change column
-$HistoryPath  = "$RooDir/Price_History.json"    # one total-collection-value entry per day, for the value-over-time chart
+$OutputPath  = "D:\MTG\Scryfall_Price_Report.html"
+$CsvPath     = "D:\MTG\Id.csv"
+$SnapshotPath = "D:\MTG\Price_Snapshot.json"   # remembers prices between runs for the Change column
+$HistoryPath  = "D:\MTG\Price_History.json"    # one total-collection-value entry per day, for the value-over-time chart
 $ReportTitle = "TCG Bible"
-
-# Total amount you have spent on the collection, in AUD. Shown as a "Total Spent" pill next to the Total pill:
-# green when the collection is worth MORE than you spent, red when it is worth LESS. Set to 0 to hide the pill.
-$TotalSpent  = 4996.9
 
 # The script's own folder. Columns.ps1 and the Assets folder (report.html / report.css / report.js) live next to it.
 $ScriptDir  = if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }
 $AssetsPath = Join-Path $ScriptDir 'Assets'
-
-# Downloaded files carry a "blocked" flag (Mark of the Web) that stops Windows running them. Clear it on every
-# file next to this script (Columns.ps1, Assets, etc.) so they never need unblocking by hand.
-try { Get-ChildItem -Path $ScriptDir -Recurse -File -ErrorAction SilentlyContinue | Unblock-File -ErrorAction SilentlyContinue } catch { }
 
 # eBay Search column: the icon opens an eBay search for the card name plus this extra word
 # (keeps results to Magic cards). Set $EbaySearchSuffix to '' to search by the card name only.
@@ -39,6 +30,17 @@ $AutoOpenReport = $true
 # Set $HighValueColumn to '' to turn the highlight off.
 $HighValueColumn = 'Price'
 $HighValueMin    = 200
+
+# Set completion bars: which Scryfall set figure counts as "how many cards there are".
+#   'card_count'   = every card Scryfall lists in the set (includes showcase / borderless / extended-art variants)
+#   'printed_size' = only the cards in the set's printed numbering (the base set, e.g. 1-271)
+$SetTotalField = 'card_count'
+
+# Missing cards view (the "Show missing cards" tick box). The script downloads every card in each set you own
+# at least one card of, so a run takes longer. Set $IncludeMissing = $false to skip this.
+$IncludeMissing    = $true
+# Sets with more cards than this are left out of the missing view (huge sets such as Secret Lair drops). 0 = no limit.
+$MissingMaxSetSize = 1500
 
 # ==============================================================================
 # REFRESH BUTTON SUPPORT (registers the tcgrefresh:// link for the current user)
@@ -282,15 +284,11 @@ foreach ($csvRow in $CsvRows) {
         }
     }
 
-    # Date added (from the CSV's Added column), kept as yyyy-MM-dd so it sorts correctly as text
-    $added = ''
-    if (([string]$csvRow.Added).Trim() -match '^(\d{4}-\d{2}-\d{2})') { $added = $Matches[1] }
-
-    $OrderedEntries.Add([PSCustomObject]@{ Id = $cardId; Finish = $finish; Qty = $qty; Added = $added })
+    $OrderedEntries.Add([PSCustomObject]@{ Id = $cardId; Finish = $finish; Qty = $qty })
     if (-not $VariantsById.ContainsKey($cardId)) {
         $VariantsById[$cardId] = New-Object System.Collections.Generic.HashSet[string]
     }
-    [void]$VariantsById[$cardId].Add("$finish|$qty|$added")
+    [void]$VariantsById[$cardId].Add("$finish|$qty")
 }
 
 if ($BadQuantity -gt 0) {
@@ -307,8 +305,11 @@ Write-Host "Found $($OrderedEntries.Count) rows ($($UniqueIds.Count) unique card
 
 # 2. Fetch unique IDs in batches. Rows are built immediately (one per finish wanted)
 #    so the large raw API objects can be discarded (keeps memory low).
-$RowLookup  = @{}      # "id|finish|qty|added" -> row
+$RowLookup  = @{}      # "id|finish|qty" -> row
 $FetchedIds = @{}
+$SetCodesUsed = @{}   # set codes seen in your collection (for the set completion bars)
+$OwnedKeys    = @{}   # "set#collectornumber" of every card you own (for the missing cards view)
+$MissingMode  = $false
 $CurrentPrices = @{}   # "id|finish" -> USD price of one copy (saved as the next snapshot)
 $BatchCount = [math]::Ceiling($UniqueIds.Count / $BatchSize)
 
@@ -325,15 +326,17 @@ for ($b = 0; $b -lt $BatchCount; $b++) {
         foreach ($card in $response.data) {
             $cardId = ([string]$card.id).ToLower()
             $FetchedIds[$cardId] = $true
+            $SetCodesUsed[([string]$card.set).ToLower()] = $true
+            $OwnedKeys[("$($card.set)#$($card.collector_number)").ToLower()] = $true
             foreach ($variant in $VariantsById[$cardId]) {
-                $finish, $qtyText, $added = $variant -split '\|'
+                $finish, $qtyText = $variant -split '\|'
                 $qty = [int]$qtyText
                 if (Test-HasPrice $card $finish) { $CurrentPrices["$cardId|$finish"] = Get-UnitPriceUsd $card $finish }
                 $row = [ordered]@{}
                 foreach ($col in $Columns) {
-                    $row[$col.Key] = & $col.Value $card ($card.id) $finish $qty $added
+                    $row[$col.Key] = & $col.Value $card ($card.id) $finish $qty
                 }
-                $RowLookup["$cardId|$finish|$qty|$added"] = [PSCustomObject]$row
+                $RowLookup["$cardId|$finish|$qty"] = [PSCustomObject]$row
             }
         }
     }
@@ -353,10 +356,112 @@ if ($Missing.Count -gt 0) {
         (($Missing | Select-Object -First 10) -join ', '))
 }
 
+# 3b. Set sizes for the set completion bars: one request returns every set.
+#     If it fails the report still builds, just without the bars.
+$SetInfo = [ordered]@{}
+if ($SetCodesUsed.Count -gt 0) {
+    Write-Host "Fetching set sizes from Scryfall..." -ForegroundColor Cyan
+    try {
+        $setResponse = Invoke-RestMethod -Uri "https://api.scryfall.com/sets" -Headers $headers1 -TimeoutSec 30
+        foreach ($set in $setResponse.data) {
+            $code = ([string]$set.code).ToLower()
+            if ($SetCodesUsed.ContainsKey($code)) {
+                $setTotal = [int]$set.$SetTotalField
+                if ($setTotal -le 0) { $setTotal = [int]$set.card_count }
+                $SetInfo[$code] = [ordered]@{ name = [string]$set.name; total = $setTotal; allcards = [int]$set.card_count }
+            }
+        }
+    }
+    catch { Write-Warning "Could not fetch set sizes ($($_.Exception.Message)) - set completion bars will be hidden." }
+}
+
+# 3c. Missing cards (the "Show missing cards" tick box): every card in each set you own at least one card of,
+#     minus the cards you own. Cards are matched by set + collector number, so owning a card in any finish counts.
+#     Missing cards are kept completely separate from $CardList, so they never touch the totals, the price
+#     snapshot or the value history.
+function Invoke-ScryfallGet {
+    param([string]$Url)
+    for ($attempt = 1; $attempt -le 4; $attempt++) {
+        try { return Invoke-RestMethod -Uri $Url -Headers $headers1 -TimeoutSec 60 }
+        catch {
+            $status = 0
+            if ($_.Exception.Response) { $status = [int]$_.Exception.Response.StatusCode }
+            $retryable = ($status -eq 429) -or ($status -ge 500)
+            if (-not $retryable -or $attempt -eq 4) { throw }
+            Write-Warning "Scryfall returned HTTP $status; retrying in $($attempt * 2) seconds..."
+            Start-Sleep -Seconds ($attempt * 2)
+        }
+    }
+}
+
+$MissingList    = New-Object System.Collections.Generic.List[PSCustomObject]
+$MissingSkipped = New-Object System.Collections.Generic.List[string]     # sets left out (too large, or the download failed)
+$MissingStatus  = ''                                                     # non-empty = why the tick box is switched off
+
+if (-not $IncludeMissing) {
+    $MissingStatus = 'Missing cards are switched off in the script (IncludeMissing is false).'
+}
+elseif ($SetInfo.Count -eq 0) {
+    $MissingStatus = 'Set information could not be loaded from Scryfall.'
+}
+elseif ($Missing.Count -gt 0 -or $FailedBatches -gt 0) {
+    $MissingStatus = 'Some cards failed to load, so the missing list would be wrong. Click Refresh data to retry.'
+}
+else {
+    $MissingMode = $true       # tells the Change column to stay blank for these rows
+    Write-Host "Fetching every card in your $($SetInfo.Count) sets for the missing cards view (this can take a few minutes)..." -ForegroundColor Cyan
+    $setNo = 0
+    foreach ($code in @($SetInfo.Keys)) {
+        $setNo++
+        Write-Progress -Activity "Fetching cards in your sets" -Status "$($code.ToUpper()) ($setNo of $($SetInfo.Count))" `
+            -PercentComplete ([int](($setNo - 1) / $SetInfo.Count * 100))
+        $info = $SetInfo[$code]
+        if ($MissingMaxSetSize -gt 0 -and $info['allcards'] -gt $MissingMaxSetSize) {
+            $MissingSkipped.Add($code)
+            Write-Host "Skipping $($code.ToUpper()) for the missing view: $($info['allcards']) cards is over the limit of $MissingMaxSetSize." -ForegroundColor Yellow
+            continue
+        }
+
+        $setRows = New-Object System.Collections.Generic.List[PSCustomObject]
+        $setOk   = $true
+        $url     = "https://api.scryfall.com/cards/search?q=" + [uri]::EscapeDataString("e:$code") + "&unique=prints&include_extras=true&include_variants=true&order=set"
+        while ($url) {
+            try { $page = Invoke-ScryfallGet $url }
+            catch { $setOk = $false; break }
+
+            foreach ($card in $page.data) {
+                $cn = [string]$card.collector_number
+                if ($OwnedKeys.ContainsKey(("$($card.set)#$cn").ToLower())) { continue }
+                # In printed_size mode only the numbered base set counts, so the missing list matches the progress bars.
+                if ($SetTotalField -eq 'printed_size' -and ($cn -notmatch '^\d+$' -or [int]$cn -gt $info['total'])) { continue }
+
+                # Price the cheapest-to-find version: normal if it exists, otherwise foil, otherwise etched.
+                $fin = $card.finishes
+                $finish = if ($fin -contains 'nonfoil') { 'normal' } elseif ($fin -contains 'foil') { 'foil' } elseif ($fin -contains 'etched') { 'etched' } else { 'normal' }
+                $row = [ordered]@{}
+                foreach ($col in $Columns) { $row[$col.Key] = & $col.Value $card ($card.id) $finish 1 }
+                $setRows.Add([PSCustomObject]$row)
+            }
+
+            $url = if ($page.has_more) { [string]$page.next_page } else { $null }
+            Start-Sleep -Milliseconds 150
+        }
+
+        if ($setOk) { foreach ($r in $setRows) { $MissingList.Add($r) } }
+        else {
+            $MissingSkipped.Add($code)
+            Write-Warning "Could not download the cards for set $($code.ToUpper()); it is left out of the missing view."
+        }
+    }
+    Write-Progress -Activity "Fetching cards in your sets" -Completed
+    $MissingMode = $false
+    Write-Host "Found $($MissingList.Count) missing cards." -ForegroundColor Cyan
+}
+
 # 4. Assemble rows in original CSV order
 $CardList = New-Object System.Collections.Generic.List[PSCustomObject]
 foreach ($entry in $OrderedEntries) {
-    $key = "$($entry.Id)|$($entry.Finish)|$($entry.Qty)|$($entry.Added)"
+    $key = "$($entry.Id)|$($entry.Finish)|$($entry.Qty)"
     if ($RowLookup.ContainsKey($key)) { $CardList.Add($RowLookup[$key]) }
 }
 
@@ -478,6 +583,12 @@ if ($CardList.Count -gt 0) {
     }
     $JsonColumns = (ConvertTo-Json @($ColumnMeta) -Compress) -replace '</', '<\/'
 
+    $JsonSets = if ($SetInfo.Count -gt 0) { (ConvertTo-Json $SetInfo -Compress) -replace '</', '<\/' } else { '{}' }
+
+    $JsonMissing = (ConvertTo-Json @($MissingList) -Compress) -replace '</', '<\/'
+    $JsonSkipped = '[' + (($MissingSkipped | ForEach-Object { '"' + $_.ToUpper() + '"' }) -join ',') + ']'
+    $MissingStatusJs = ($MissingStatus -replace "[\\']", '')
+
     $SafeTitle   = [System.Net.WebUtility]::HtmlEncode($ReportTitle)
     $AudText     = $Aud.ToString("0.0000", [System.Globalization.CultureInfo]::InvariantCulture)
     $GeneratedOn = Get-Date -Format "d MMM yyyy"
@@ -489,7 +600,6 @@ if ($CardList.Count -gt 0) {
     }
     $FooterHtml = "Prices from Scryfall (USD), converted to AUD at 1 USD = $AudText AUD$AudNote &middot; Generated $GeneratedOn$ChangeNote<br>Unofficial fan-made tool, not affiliated with or endorsed by Wizards of the Coast. Magic: The Gathering is a trademark of Wizards of the Coast LLC. Card data and prices courtesy of Scryfall."
 
-    $TotalSpentText   = ([double]$TotalSpent).ToString([System.Globalization.CultureInfo]::InvariantCulture)
     $HighValueMinText = ([double]$HighValueMin).ToString([System.Globalization.CultureInfo]::InvariantCulture)
     $HighValueKeyJs   = ($HighValueColumn -replace "[\\']", '')
 
@@ -502,7 +612,10 @@ if ($CardList.Count -gt 0) {
         "var highValueMin = $HighValueMinText;"
         "var valueHistory = $JsonHistory;"
         "var audRate = $AudText;"
-        "var totalSpent = $TotalSpentText;"
+        "var setInfo = $JsonSets;"
+        "var missingData = $JsonMissing;"
+        "var missingStatus = '$MissingStatusJs';"
+        "var missingSkipped = $JsonSkipped;"
     ) -join "`n"
 
     try {
