@@ -1,12 +1,13 @@
 # ==============================================================================
 # CONFIGURATION & VARIABLES
 # ==============================================================================
+$RooDir = "C:\Users\User\OneDrive\Documents\GitHub\MTG-Bible"
 $Aud         = 1.4233     # fallback USD->AUD rate, only used if the live rate can't be fetched
 $UseLiveRate = $true      # $true = fetch today's USD->AUD rate each run; $false = always use the fixed rate above
-$OutputPath  = "./Scryfall_Price_Report.html"
-$CsvPath     = "./ManaBox_Collection.csv"   # your exported collection CSV from TCGPlayer, MTGGoldfish, etc.
-$SnapshotPath = "./Price_Snapshot.json"   # remembers prices between runs for the Change column
-$HistoryPath  = "./Price_History.json"    # one total-collection-value entry per day, for the value-over-time chart
+$OutputPath  = "$RooDir/Scryfall_Price_Report.html"
+$CsvPath     = "$RooDir/ManaBox_Collection.csv"   # your exported collection CSV from TCGPlayer, MTGGoldfish, etc.
+$SnapshotPath = "$RooDir/Price_Snapshot.json"   # remembers prices between runs for the Change column
+$HistoryPath  = "$RooDir/Price_History.json"    # one total-collection-value entry per day, for the value-over-time chart
 $ReportTitle = "TCG Bible"
 
 # Total amount you have spent on the collection, in AUD. Shown as a "Total Spent" pill next to the Total pill:
